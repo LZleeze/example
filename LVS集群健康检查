@@ -1,0 +1,23 @@
+#!/bin/bash
+#lvs健康检查 ipvsadm -g  DR 直连
+vip=192.168.4.15:80
+web1=192.168.4.100
+web2=192.168.4.200
+while :
+do
+  sleep 3
+  for i in $web1 $web2
+  do
+    curl -s http://$i &>/dev/null
+    if [ $? -ne 0 ];then
+       ipvsadm -Ln |grep -q $i &&  ipvsadm -d -t $vip -r $i
+    fi
+  done
+  for i in $web1 $web2
+  do
+    curl -s http://$i &>/dev/null
+    if [ $? -eq 0 ];then
+       ipvsadm -Ln |grep -q $i || ipvsadm -a -t $vip -r $i -g
+    fi
+  done
+done
